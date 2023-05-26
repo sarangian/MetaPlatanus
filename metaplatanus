@@ -32,7 +32,8 @@ sub cons_asm_main
 	my $tmp_dir = '.';
 
 	my $min_cov_contig  = -1;
-	my $megahit_min_len = 500;
+	my $min_contig = 1500;
+	my $megahit_min_len = 200;
 	my $min_map_idt_binning  = "";
 	my @lib_file;
 	my @lib_direction;
@@ -61,6 +62,7 @@ sub cons_asm_main
 		'sub_bin=s' => \$sub_bin,
 
 		'min_cov_contig=i' => \$min_cov_contig,
+		'min_contig'=i => \$min_contig,
 		'megahit_min_len=i' => \$megahit_min_len,
 		'min_map_idt_binning=s' => \$min_map_idt_binning,
 		'p=s{1,}' => \@pac_file,
@@ -624,6 +626,7 @@ sub binning_metabat
 t=$n_thread
 tmp=$tmp_dir
 o=$out
+min_contig=$min_contig
 iterative_asm_dir=$iterative_asm_dir
 
 ln -fs \$iterative_asm_dir/\${o}_iterativeAssembly.fa base.fa
@@ -633,7 +636,7 @@ $map_cmd_str
 
 BAMS="$bam_str"
 jgi_summarize_bam_contig_depths $idt_opt --outputDepth depth.txt \$BAMS >jgi_summarize_bam_contig_depths.log 2>&1 || exit 1
-metabat2 -t \$t -i base.fa -a depth.txt -o metabat2_out.tsv -l -v --saveCls --noBinOut >metabat2.stdout 2>metabat2.stderr || exit 1
+metabat2 -t \$t -i base.fa -a depth.txt -m $min_contig -o metabat2_out.tsv -l -v --saveCls --noBinOut >metabat2.stdout 2>metabat2.stderr || exit 1
 renumber_metabat2_bin.pl metabat2_out.tsv >final.tsv
 
 rm *.bam
@@ -928,6 +931,7 @@ Options:
     -tmp DIR                           : directory for temporary files (default, ".")
     -sub_bin DIR                       : directory for sub-executables, such as mata_plantaus and minimap2 (default, directory-of-this-script/sub_bin)
     -min_cov_contig INT                : k-mer coverage cutoff for contig-assembly of MetaPlatanus (default, 4 with MEGAHIT, 2 otherwise)
+    -min_contig INT		       : Minimum size of a contig for binning (should be >=1500).
     -min_map_idt_binning FLOAT         : minimum identity (%) in read mapping for binning (default, 97)
     -no_megahit                        : do not perfom MEGAHIT assembly (default, off)
     -no_binning                        : do not perfom binning (default, off)
